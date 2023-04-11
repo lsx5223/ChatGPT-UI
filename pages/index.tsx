@@ -696,8 +696,7 @@ const Home: React.FC<HomeProps> = ({
     }
 
     const prompts = localStorage.getItem('prompts');
-    if (prompts) {
-      setPrompts(JSON.parse(prompts));
+   
     }
 
     const conversationHistory = localStorage.getItem('conversationHistory');
