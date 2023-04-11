@@ -49,11 +49,7 @@ export const PluginKeys: FC<Props> = ({
 
   return (
     <>
-      <SidebarButton
-        text={t('Plugin Keys')}
-        icon={<IconKey size={18} />}
-        onClick={() => setIsChanging(true)}
-      />
+     
 
       {isChanging && (
         <div
