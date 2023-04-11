@@ -177,7 +177,7 @@ export const Chat: FC<Props> = memo(
                   rel="noreferrer"
                   className="text-blue-500 hover:underline"
                 >
-                  QQ
+                  联系我
                 </a>
               </div>
             </div>
@@ -200,7 +200,7 @@ export const Chat: FC<Props> = memo(
                           <Spinner size="16px" className="mx-auto" />
                         </div>
                       ) : (
-                        'Chatbot UI'
+                        'ChatGPT-UI'
                       )}
                     </div>
 
