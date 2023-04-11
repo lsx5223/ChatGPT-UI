@@ -596,7 +596,268 @@ const Home: React.FC<HomeProps> = ({
 
   // PROMPT OPERATIONS --------------------------------------------
 
- 
+  const handleCreatePrompt = () => {
+    const newPrompt: Prompt = {
+      id: uuidv4(),
+      name: `Prompt ${prompts.length + 1}`,
+      description: '',
+      content: '',
+      model: OpenAIModels[defaultModelId],
+      folderId: null,
+    };
+
+    const updatedPrompts = [...prompts, newPrompt];
+
+    setPrompts(updatedPrompts);
+    savePrompts(updatedPrompts);
+  };
+
+  const handleUpdatePrompt = (prompt: Prompt) => {
+    const updatedPrompts = prompts.map((p) => {
+      if (p.id === prompt.id) {
+        return prompt;
+      }
+
+      return p;
+    });
+
+    setPrompts(updatedPrompts);
+    savePrompts(updatedPrompts);
+  };
+
+  const handleDeletePrompt = (prompt: Prompt) => {
+    const updatedPrompts = prompts.filter((p) => p.id !== prompt.id);
+    setPrompts(updatedPrompts);
+    savePrompts(updatedPrompts);
+  };
+
+  // EFFECTS  --------------------------------------------
+
+  useEffect(() => {
+    if (currentMessage) {
+      handleSend(currentMessage);
+      setCurrentMessage(undefined);
+    }
+  }, [currentMessage]);
+
+  useEffect(() => {
+    if (window.innerWidth < 640) {
+      setShowSidebar(false);
+    }
+  }, [selectedConversation]);
+
+  useEffect(() => {
+    if (apiKey) {
+      fetchModels(apiKey);
+    }
+  }, [apiKey]);
+
+  // ON LOAD --------------------------------------------
+
+  useEffect(() => {
+    const theme = localStorage.getItem('theme');
+    if (theme) {
+      setLightMode(theme as 'dark' | 'light');
+    }
+
+    const apiKey = localStorage.getItem('apiKey');
+    if (serverSideApiKeyIsSet) {
+      fetchModels('');
+      setApiKey('');
+      localStorage.removeItem('apiKey');
+    } else if (apiKey) {
+      setApiKey(apiKey);
+      fetchModels(apiKey);
+    }
+
+    const pluginKeys = localStorage.getItem('pluginKeys');
+    if (serverSidePluginKeysSet) {
+      setPluginKeys([]);
+      localStorage.removeItem('pluginKeys');
+    } else if (pluginKeys) {
+      setPluginKeys(JSON.parse(pluginKeys));
+    }
+
+    if (window.innerWidth < 640) {
+      setShowSidebar(false);
+    }
+
+    const showChatbar = localStorage.getItem('showChatbar');
+    if (showChatbar) {
+      setShowSidebar(showChatbar === 'true');
+    }
+
+    const showPromptbar = localStorage.getItem('showPromptbar');
+    if (showPromptbar) {
+      setShowPromptbar(showPromptbar === 'true');
+    }
+
+    const folders = localStorage.getItem('folders');
+    if (folders) {
+      setFolders(JSON.parse(folders));
+    }
+
+    const prompts = localStorage.getItem('prompts');
+    if (prompts) {
+      setPrompts(JSON.parse(prompts));
+    }
+
+    const conversationHistory = localStorage.getItem('conversationHistory');
+    if (conversationHistory) {
+      const parsedConversationHistory: Conversation[] =
+        JSON.parse(conversationHistory);
+      const cleanedConversationHistory = cleanConversationHistory(
+        parsedConversationHistory,
+      );
+      setConversations(cleanedConversationHistory);
+    }
+
+    const selectedConversation = localStorage.getItem('selectedConversation');
+    if (selectedConversation) {
+      const parsedSelectedConversation: Conversation =
+        JSON.parse(selectedConversation);
+      const cleanedSelectedConversation = cleanSelectedConversation(
+        parsedSelectedConversation,
+      );
+      setSelectedConversation(cleanedSelectedConversation);
+    } else {
+      setSelectedConversation({
+        id: uuidv4(),
+        name: 'New conversation',
+        messages: [],
+        model: OpenAIModels[defaultModelId],
+        prompt: DEFAULT_SYSTEM_PROMPT,
+        folderId: null,
+      });
+    }
+  }, [serverSideApiKeyIsSet]);
+
+  return (
+    <>
+      <Head>
+        <title>Chatbot UI</title>
+        <meta name="description" content="ChatGPT but better." />
+        <meta
+          name="viewport"
+          content="height=device-height ,width=device-width, initial-scale=1, user-scalable=no"
+        />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      {selectedConversation && (
+        <main
+          className={`flex h-screen w-screen flex-col text-sm text-white dark:text-white ${lightMode}`}
+        >
+          <div className="fixed top-0 w-full sm:hidden">
+            <Navbar
+              selectedConversation={selectedConversation}
+              onNewConversation={handleNewConversation}
+            />
+          </div>
+
+          <div className="flex h-full w-full pt-[48px] sm:pt-0">
+            {showSidebar ? (
+              <div>
+                <Chatbar
+                  loading={messageIsStreaming}
+                  conversations={conversations}
+                  lightMode={lightMode}
+                  selectedConversation={selectedConversation}
+                  apiKey={apiKey}
+                  serverSideApiKeyIsSet={serverSideApiKeyIsSet}
+                  pluginKeys={pluginKeys}
+                  serverSidePluginKeysSet={serverSidePluginKeysSet}
+                  folders={folders.filter((folder) => folder.type === 'chat')}
+                  onToggleLightMode={handleLightMode}
+                  onCreateFolder={(name) => handleCreateFolder(name, 'chat')}
+                  onDeleteFolder={handleDeleteFolder}
+                  onUpdateFolder={handleUpdateFolder}
+                  onNewConversation={handleNewConversation}
+                  onSelectConversation={handleSelectConversation}
+                  onDeleteConversation={handleDeleteConversation}
+                  onUpdateConversation={handleUpdateConversation}
+                  onApiKeyChange={handleApiKeyChange}
+                  onClearConversations={handleClearConversations}
+                  onExportConversations={handleExportData}
+                  onImportConversations={handleImportConversations}
+                  onPluginKeyChange={handlePluginKeyChange}
+                  onClearPluginKey={handleClearPluginKey}
+                />
+
+                <button
+                  className="fixed top-5 left-[270px] z-50 h-7 w-7 hover:text-gray-400 dark:text-white dark:hover:text-gray-300 sm:top-0.5 sm:left-[270px] sm:h-8 sm:w-8 sm:text-neutral-700"
+                  onClick={handleToggleChatbar}
+                >
+                  <IconArrowBarLeft />
+                </button>
+                <div
+                  onClick={handleToggleChatbar}
+                  className="absolute top-0 left-0 z-10 h-full w-full bg-black opacity-70 sm:hidden"
+                ></div>
+              </div>
+            ) : (
+              <button
+                className="fixed top-2.5 left-4 z-50 h-7 w-7 text-white hover:text-gray-400 dark:text-white dark:hover:text-gray-300 sm:top-0.5 sm:left-4 sm:h-8 sm:w-8 sm:text-neutral-700"
+                onClick={handleToggleChatbar}
+              >
+                <IconArrowBarRight />
+              </button>
+            )}
+
+            <div className="flex flex-1">
+              <Chat
+                conversation={selectedConversation}
+                messageIsStreaming={messageIsStreaming}
+                apiKey={apiKey}
+                serverSideApiKeyIsSet={serverSideApiKeyIsSet}
+                defaultModelId={defaultModelId}
+                modelError={modelError}
+                models={models}
+                loading={loading}
+                prompts={prompts}
+                onSend={handleSend}
+                onUpdateConversation={handleUpdateConversation}
+                onEditMessage={handleEditMessage}
+                stopConversationRef={stopConversationRef}
+              />
+            </div>
+
+            {showPromptbar ? (
+              <div>
+                <Promptbar
+                  prompts={prompts}
+                  folders={folders.filter((folder) => folder.type === 'prompt')}
+                  onCreatePrompt={handleCreatePrompt}
+                  onUpdatePrompt={handleUpdatePrompt}
+                  onDeletePrompt={handleDeletePrompt}
+                  onCreateFolder={(name) => handleCreateFolder(name, 'prompt')}
+                  onDeleteFolder={handleDeleteFolder}
+                  onUpdateFolder={handleUpdateFolder}
+                />
+<!--                 <button
+                  className="fixed top-5 right-[270px] z-50 h-7 w-7 hover:text-gray-400 dark:text-white dark:hover:text-gray-300 sm:top-0.5 sm:right-[270px] sm:h-8 sm:w-8 sm:text-neutral-700"
+                  onClick={handleTogglePromptbar}
+                >
+                  <IconArrowBarRight />
+                </button>
+                <div
+                  onClick={handleTogglePromptbar}
+                  className="absolute top-0 left-0 z-10 h-full w-full bg-black opacity-70 sm:hidden"
+                ></div>
+              </div>
+            ) : (
+              <button
+                className="fixed top-2.5 right-4 z-50 h-7 w-7 text-white hover:text-gray-400 dark:text-white dark:hover:text-gray-300 sm:top-0.5 sm:right-4 sm:h-8 sm:w-8 sm:text-neutral-700"
+                onClick={handleTogglePromptbar}
+              >
+                <IconArrowBarLeft />
+              </button> -->
+            )}
+          </div>
+        </main>
+      )}
+    </>
+  );
+};
 export default Home;
 
 export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
