@@ -34,23 +34,7 @@ export const PluginSelect: FC<Props> = ({ plugin, onPluginChange }) => {
             );
           }}
         >
-          <option
-            key="none"
-            value=""
-            className="dark:bg-[#343541] dark:text-white"
-          >
-            Select Plugin
-          </option>
-
-          {PluginList.map((plugin) => (
-            <option
-              key={plugin.id}
-              value={plugin.id}
-              className="dark:bg-[#343541] dark:text-white"
-            >
-              {plugin.name}
-            </option>
-          ))}
+         
         </select>
       </div>
     </div>
